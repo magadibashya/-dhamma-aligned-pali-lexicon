@@ -1,0 +1,79 @@
+import json
+import sys
+
+# දැනුම් පදනම පූරණය කිරීම
+def load_knowledge_base(file_path="knowledge_base.json"):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("දැනුම් පදනම හමු නොවීය. කරුණාකර knowledge_base.json ගොනුව එකම ෆෝල්ඩරයේ තබන්න.")
+        sys.exit(1)
+    except json.JSONDecodeError:
+        print("JSON ගොනුව විකෘති වී ඇත. කරුණාකර පරීක්ෂා කරන්න.")
+        sys.exit(1)
+
+# පදයක් සොයා ගැනීම (පාලි හෝ චීන)
+def search_term(kb, term):
+    term_lower = term.lower()
+    results = []
+    for entry in kb.get("entries", []):
+        pali = entry.get("pali_term", "").lower()
+        chinese = entry.get("chinese_term", "").lower()
+        if term_lower == pali or term_lower == chinese:
+            results.append(entry)
+    return results
+
+# ප්‍රතිඵලය ලස්සනට පෙන්වීම
+def display_result(entry):
+    print("=" * 60)
+    print(f"පාලි පදය: {entry.get('pali_term', '—')}")
+    print(f"චීන පදය: {entry.get('chinese_term', '—')}")
+    print(f"හැඳුනුම: {entry.get('id', '—')}")
+    print("-" * 60)
+
+    if entry.get("lokiya_meaning"):
+        print(f"ලෞකික අර්ථය: {entry['lokiya_meaning']}")
+    if entry.get("lokuttara_meaning"):
+        print(f"ලෝකෝත්තර අර්ථය: {entry['lokuttara_meaning']}")
+    if entry.get("sakaaya_nirutti"):
+        print(f"සකාය නිරුත්ති (මූල අර්ථය): {entry['sakaaya_nirutti']}")
+    
+    print(f"තත්ත්වය: {entry.get('status', '—')}")
+    print("=" * 60)
+
+# ප්‍රධාන වැඩසටහන
+def main():
+    kb = load_knowledge_base()
+
+    if len(sys.argv) > 1:
+        # විධාන රේඛාවෙන් පදය ලබා දී ඇත්නම්
+        term = " ".join(sys.argv[1:])
+        results = search_term(kb, term)
+        if results:
+            for res in results:
+                display_result(res)
+        else:
+            print(f"'{term}' සඳහා කිසිදු පදයක් හමු නොවීය.")
+    else:
+        # අන්තර්ක්‍රියාකාරී ලෙස ඇතුළත් කිරීම
+        print("ධර්මාර්ථ පර්යේෂකය (Framework v10.5) - පාලි හෝ චීන පදයක් ඇතුළත් කරන්න (පිටවීමට 'exit' ලියන්න)")
+        while True:
+            try:
+                term = input("\nපදය: ").strip()
+                if term.lower() in ("exit", "quit", "q"):
+                    break
+                if not term:
+                    continue
+                results = search_term(kb, term)
+                if results:
+                    for res in results:
+                        display_result(res)
+                else:
+                    print(f"'{term}' සඳහා කිසිදු පදයක් හමු නොවීය.")
+            except KeyboardInterrupt:
+                print("\nපිටවීම...")
+                break
+
+if __name__ == "__main__":
+    main()
